@@ -14,6 +14,10 @@ GOOGLE_SHEET_ID <- "1zN9mS178n5LZMJ6bEPmEnsMh1bPoQ6YhAY_HDzvuPhQ"
 #' Get database connection
 #' @return SQLite connection object
 get_db_connection <- function() {
+  # Create data directory if it doesn't exist
+  if (!dir.exists("data")) {
+    dir.create("data", recursive = TRUE)
+  }
   dbConnect(SQLite(), "data/projects.db")
 }
 
