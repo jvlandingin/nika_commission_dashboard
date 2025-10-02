@@ -309,7 +309,12 @@ server <- function(input, output, session) {
         head(5) %>%
         select(project_name, project_type, start_date, status, budget)
     },
-    options = list(dom = 't', pageLength = 5)
+    options = list(
+      dom = 't',
+      pageLength = 5,
+      scrollX = TRUE,
+      autoWidth = FALSE
+    )
   )
 
   # All projects table with editing

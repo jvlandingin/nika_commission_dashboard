@@ -17,8 +17,9 @@ ui <- dashboardPage(
   ),
 
   dashboardBody(
-    # Include custom CSS
+    # Include custom CSS and meta tags for mobile
     tags$head(
+      tags$meta(name = "viewport", content = "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"),
       tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
     ),
     tabItems(
