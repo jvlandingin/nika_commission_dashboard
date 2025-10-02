@@ -89,10 +89,29 @@ save_to_sqlite <- function(data) {
 load_from_google_sheets <- function() {
   tryCatch(
     {
-      # Authenticate with specific email
-      gs4_auth(
-        email = "johnvincentland@gmail.com"
-      )
+      # Try service account from environment variable first (for deployment)
+      service_account_json <- Sys.getenv("GS4_SERVICE_ACCOUNT")
+
+      if (nzchar(service_account_json)) {
+        # Write to temp file and authenticate
+        temp_json <- tempfile(fileext = ".json")
+        cat(service_account_json, file = temp_json)
+        message("Using service account from environment variable")
+        gs4_auth(path = temp_json)
+        on.exit(unlink(temp_json))
+      } else if (file.exists(".secrets/service-account.json")) {
+        # Use local service account file (for local development)
+        message("Using local service account file")
+        gs4_auth(path = ".secrets/service-account.json")
+      } else if (file.exists(".secrets/gs4-token.rds")) {
+        # Use cached token (local development with personal account)
+        message("Using cached token")
+        gs4_auth(token = readRDS(".secrets/gs4-token.rds"))
+      } else {
+        # Last resort: try interactive auth (local development only)
+        message("Using interactive auth with email")
+        gs4_auth(email = "johnvincentland@gmail.com")
+      }
 
       # Read the sheet
       projects <- read_sheet(GOOGLE_SHEET_ID, sheet = 1) %>%
@@ -117,10 +136,29 @@ load_from_google_sheets <- function() {
 save_to_google_sheets <- function(data) {
   tryCatch(
     {
-      # Use same email for authentication
-      gs4_auth(
-        email = "johnvincentland@gmail.com"
-      )
+      # Try service account from environment variable first (for deployment)
+      service_account_json <- Sys.getenv("GS4_SERVICE_ACCOUNT")
+
+      if (nzchar(service_account_json)) {
+        # Write to temp file and authenticate
+        temp_json <- tempfile(fileext = ".json")
+        cat(service_account_json, file = temp_json)
+        message("Using service account from environment variable")
+        gs4_auth(path = temp_json)
+        on.exit(unlink(temp_json))
+      } else if (file.exists(".secrets/service-account.json")) {
+        # Use local service account file (for local development)
+        message("Using local service account file")
+        gs4_auth(path = ".secrets/service-account.json")
+      } else if (file.exists(".secrets/gs4-token.rds")) {
+        # Use cached token (local development with personal account)
+        message("Using cached token")
+        gs4_auth(token = readRDS(".secrets/gs4-token.rds"))
+      } else {
+        # Last resort: try interactive auth (local development only)
+        message("Using interactive auth with email")
+        gs4_auth(email = "johnvincentland@gmail.com")
+      }
 
       # Write to sheet (overwrite)
       sheet_write(data, ss = GOOGLE_SHEET_ID, sheet = 1)
