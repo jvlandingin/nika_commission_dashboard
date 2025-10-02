@@ -254,10 +254,15 @@ server <- function(input, output, session) {
   # Handle table edits in Manage Projects tab
   observeEvent(input$all_projects_cell_edit, {
     info <- input$all_projects_cell_edit
+
+    # Get the full unfiltered data
     data <- projects_data()
 
+    # Get the sorted/filtered data shown in the table
+    displayed_data <- data %>% arrange(desc(start_date))
+
     # Get column name (DT uses 1-indexed for info$col)
-    col_name <- names(data)[info$col]
+    col_name <- names(displayed_data)[info$col]
     new_value <- info$value
 
     # Validate project_type and status columns
@@ -281,8 +286,24 @@ server <- function(input, output, session) {
       }
     }
 
-    # Update data
-    data[info$row, info$col] <- new_value
+    # Update data with proper type conversion
+    # DT returns all edits as characters, so we need to convert based on column type
+    if (col_name == "id") {
+      new_value <- as.integer(new_value)
+    } else if (col_name == "start_date" || col_name == "deadline") {
+      new_value <- as.Date(new_value)
+    } else if (col_name == "budget") {
+      new_value <- as.numeric(new_value)
+    }
+
+    # Get the ID of the row being edited (from displayed table)
+    row_id <- displayed_data$id[info$row]
+
+    # Find this row in the original data by ID and update it
+    row_index_in_original <- which(data$id == row_id)
+    data[row_index_in_original, col_name] <- new_value
+
+    # Update reactive data
     projects_data(data)
 
     # Save to database
