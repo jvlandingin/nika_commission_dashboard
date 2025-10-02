@@ -37,6 +37,13 @@ ui <- dashboardPage(
               start = Sys.Date() - 365,
               end = Sys.Date(),
               max = Sys.Date()
+            ),
+            actionButton(
+              "refresh_dashboard",
+              label = "Refresh from Google Sheets",
+              icon = icon("sync"),
+              class = "btn btn-success btn-sm",
+              style = "margin-top: 10px;"
             )
           )
         ),
@@ -147,15 +154,22 @@ ui <- dashboardPage(
               ),
               actionButton(
                 "refresh_data",
-                label = "Refresh from Google Sheets",
+                label = "Refresh",
                 icon = icon("sync"),
                 class = "btn btn-success btn-sm",
+                style = "margin-left: 10px;"
+              ),
+              actionButton(
+                "delete_selected",
+                label = "Delete Selected",
+                icon = icon("trash"),
+                class = "btn btn-danger btn-sm",
                 style = "margin-left: 10px;"
               ),
               tags$span(
                 style = "margin-left: 15px; color: #666; font-size: 12px;",
                 tags$i(class = "fa fa-info-circle"),
-                " Click any cell to edit. ",
+                " Select rows and click Delete, or click any cell to edit. ",
                 tags$strong("Project Type:"),
                 " Commission, Personal, Client Work, Portfolio | ",
                 tags$strong("Status:"),

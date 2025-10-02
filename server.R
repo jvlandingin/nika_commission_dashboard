@@ -5,7 +5,7 @@ server <- function(input, output, session) {
   # Reactive data - Load from database
   projects_data <- reactiveVal(load_projects_data())
 
-  # Refresh data from Google Sheets
+  # Refresh data from Google Sheets (Manage Projects tab)
   observeEvent(input$refresh_data, {
     showNotification(
       "Refreshing data from Google Sheets...",
@@ -34,6 +34,74 @@ server <- function(input, output, session) {
         duration = 5
       )
     }
+  })
+
+  # Refresh data from Google Sheets (Dashboard tab)
+  observeEvent(input$refresh_dashboard, {
+    showNotification(
+      "Refreshing data from Google Sheets...",
+      type = "message",
+      duration = 2,
+      id = "refresh_notification"
+    )
+
+    # Load fresh data from Google Sheets
+    fresh_data <- load_from_google_sheets()
+
+    if (!is.null(fresh_data) && nrow(fresh_data) > 0) {
+      projects_data(fresh_data)
+      # Also update local SQLite cache
+      save_to_sqlite(fresh_data)
+
+      showNotification(
+        "Data refreshed successfully!",
+        type = "message",
+        duration = 3
+      )
+    } else {
+      showNotification(
+        "Failed to refresh data from Google Sheets",
+        type = "error",
+        duration = 5
+      )
+    }
+  })
+
+  # Delete selected rows
+  observeEvent(input$delete_selected, {
+    # Get selected rows from the table
+    selected_rows <- input$all_projects_rows_selected
+
+    if (is.null(selected_rows) || length(selected_rows) == 0) {
+      showNotification(
+        "Please select rows to delete",
+        type = "warning",
+        duration = 3
+      )
+      return()
+    }
+
+    # Get the full data and displayed data
+    data <- projects_data()
+    displayed_data <- data %>% arrange(desc(start_date))
+
+    # Get IDs of selected rows
+    selected_ids <- displayed_data$id[selected_rows]
+
+    # Remove selected rows
+    updated_data <- data %>% filter(!id %in% selected_ids)
+
+    # Update reactive data
+    projects_data(updated_data)
+
+    # Save to database
+    save_projects_data(updated_data)
+
+    showNotification(
+      paste("Deleted", length(selected_ids), "project(s) successfully!"),
+      type = "message",
+      duration = 3
+    )
   })
 
   # Filtered data based on date range
@@ -227,6 +295,7 @@ server <- function(input, output, session) {
       disable = list(columns = c(0))  # Disable editing ID column (0-indexed)
     ),
     filter = 'top',  # Add column filters at the top
+    selection = 'multiple',  # Allow multiple row selection
     extensions = 'Buttons',
     options = list(
       pageLength = 10,
