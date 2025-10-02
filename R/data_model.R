@@ -22,7 +22,9 @@ init_database <- function() {
   con <- get_db_connection()
 
   # Create projects table if it doesn't exist
-  dbExecute(con, "
+  dbExecute(
+    con,
+    "
     CREATE TABLE IF NOT EXISTS projects (
       id INTEGER PRIMARY KEY,
       project_name TEXT NOT NULL,
@@ -33,7 +35,8 @@ init_database <- function() {
       status TEXT,
       description TEXT
     )
-  ")
+  "
+  )
 
   dbDisconnect(con)
 }
@@ -80,48 +83,52 @@ save_to_sqlite <- function(data) {
 #' Load projects from Google Sheets
 #' @return Dataframe of projects
 load_from_google_sheets <- function() {
-  tryCatch({
-    # Authenticate with specific email
-    gs4_auth(
-      email = "johnvincentland@gmail.com",
-      cache = ".secrets"
-    )
-
-    # Read the sheet
-    projects <- read_sheet(GOOGLE_SHEET_ID, sheet = 1) %>%
-      mutate(
-        start_date = as.Date(start_date),
-        deadline = as.Date(deadline),
-        id = as.integer(id),
-        budget = as.numeric(budget)
+  tryCatch(
+    {
+      # Authenticate with specific email
+      gs4_auth(
+        email = "johnvincentland@gmail.com"
       )
 
-    return(projects)
-  }, error = function(e) {
-    message("Error loading from Google Sheets: ", e$message)
-    return(NULL)
-  })
+      # Read the sheet
+      projects <- read_sheet(GOOGLE_SHEET_ID, sheet = 1) %>%
+        mutate(
+          start_date = as.Date(start_date),
+          deadline = as.Date(deadline),
+          id = as.integer(id),
+          budget = as.numeric(budget)
+        )
+
+      return(projects)
+    },
+    error = function(e) {
+      message("Error loading from Google Sheets: ", e$message)
+      return(NULL)
+    }
+  )
 }
 
 #' Save projects to Google Sheets
 #' @param data Projects dataframe
 save_to_google_sheets <- function(data) {
-  tryCatch({
-    # Use same email for authentication
-    gs4_auth(
-      email = "johnvincentland@gmail.com",
-      cache = ".secrets"
-    )
+  tryCatch(
+    {
+      # Use same email for authentication
+      gs4_auth(
+        email = "johnvincentland@gmail.com"
+      )
 
-    # Write to sheet (overwrite)
-    sheet_write(data, ss = GOOGLE_SHEET_ID, sheet = 1)
+      # Write to sheet (overwrite)
+      sheet_write(data, ss = GOOGLE_SHEET_ID, sheet = 1)
 
-    message("Successfully saved to Google Sheets")
-    return(TRUE)
-  }, error = function(e) {
-    message("Error saving to Google Sheets: ", e$message)
-    return(FALSE)
-  })
+      message("Successfully saved to Google Sheets")
+      return(TRUE)
+    },
+    error = function(e) {
+      message("Error saving to Google Sheets: ", e$message)
+      return(FALSE)
+    }
+  )
 }
 
 # Main Data Functions ----
@@ -183,20 +190,40 @@ load_sample_data <- function() {
   sample_projects <- data.frame(
     id = 1:25,
     project_name = c(
-      "Fantasy Portrait Commission", "Logo Design for Cafe", "Book Cover Illustration",
-      "Wedding Portrait", "Digital Character Design", "Brand Identity Package",
-      "Album Cover Art", "Website Banner Design", "Pet Portrait Commission",
-      "Game Asset Creation", "Social Media Graphics", "Poster Design",
-      "Personal Art Project", "Corporate Illustration", "T-Shirt Design",
-      "Storyboard Creation", "Icon Set Design", "Magazine Illustration",
-      "Event Flyer Design", "Product Packaging Design", "Mural Concept Art",
-      "Animation Frame Design", "Business Card Design", "Children's Book Art",
+      "Fantasy Portrait Commission",
+      "Logo Design for Cafe",
+      "Book Cover Illustration",
+      "Wedding Portrait",
+      "Digital Character Design",
+      "Brand Identity Package",
+      "Album Cover Art",
+      "Website Banner Design",
+      "Pet Portrait Commission",
+      "Game Asset Creation",
+      "Social Media Graphics",
+      "Poster Design",
+      "Personal Art Project",
+      "Corporate Illustration",
+      "T-Shirt Design",
+      "Storyboard Creation",
+      "Icon Set Design",
+      "Magazine Illustration",
+      "Event Flyer Design",
+      "Product Packaging Design",
+      "Mural Concept Art",
+      "Animation Frame Design",
+      "Business Card Design",
+      "Children's Book Art",
       "Digital Painting Study"
     ),
     project_type = sample(project_types, 25, replace = TRUE),
     start_date = start_dates,
     deadline = start_dates + sample(7:90, 25, replace = TRUE),
-    budget = sample(c(50, 100, 150, 200, 300, 500, 750, 1000, 1500, 2000), 25, replace = TRUE),
+    budget = sample(
+      c(50, 100, 150, 200, 300, 500, 750, 1000, 1500, 2000),
+      25,
+      replace = TRUE
+    ),
     status = sample(statuses, 25, replace = TRUE, prob = c(0.4, 0.5, 0.1)),
     description = c(
       "Detailed fantasy character portrait with magical elements",
@@ -234,4 +261,3 @@ load_sample_data <- function() {
 
   return(sample_projects)
 }
-
