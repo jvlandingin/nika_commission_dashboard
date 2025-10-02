@@ -19,7 +19,9 @@ ui <- dashboardPage(
   dashboardBody(
     # Include custom CSS and meta tags for mobile
     tags$head(
+      tags$title("Mga Komisyon ni Nika - Artist Dashboard"),
       tags$meta(name = "viewport", content = "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"),
+      tags$link(rel = "icon", type = "image/png", href = "favicon.png"),
       tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
     ),
     tabItems(
@@ -178,53 +180,6 @@ ui <- dashboardPage(
               )
             ),
             DT::dataTableOutput("all_projects")
-          )
-        )
-      )
-    )
-  ),
-
-  # Confirmation modal for delete
-  tags$div(
-    id = "delete-modal",
-    style = "display: none;",
-    tags$div(
-      class = "modal fade",
-      id = "confirmDeleteModal",
-      tabindex = "-1",
-      role = "dialog",
-      tags$div(
-        class = "modal-dialog",
-        role = "document",
-        tags$div(
-          class = "modal-content",
-          tags$div(
-            class = "modal-header",
-            tags$h4(class = "modal-title", "Confirm Delete"),
-            tags$button(
-              type = "button",
-              class = "close",
-              `data-dismiss` = "modal",
-              HTML("&times;")
-            )
-          ),
-          tags$div(
-            class = "modal-body",
-            uiOutput("delete_confirmation_text")
-          ),
-          tags$div(
-            class = "modal-footer",
-            tags$button(
-              type = "button",
-              class = "btn btn-secondary",
-              `data-dismiss` = "modal",
-              "Cancel"
-            ),
-            actionButton(
-              "confirm_delete",
-              "Delete",
-              class = "btn btn-danger"
-            )
           )
         )
       )
