@@ -23,4 +23,5 @@ source("R/utils_charts.R")
 # Global variables and configuration
 PROJECT_TYPES <- c("Commission", "Personal", "Client Work", "Portfolio")
 PROJECT_STATUSES <- c("Active", "Completed", "On Hold", "Cancelled")
+PAYMENT_STATUSES <- c("Paid", "Partially Paid", "Unpaid")
 DATA_FILE <- "data/projects_data.rds"

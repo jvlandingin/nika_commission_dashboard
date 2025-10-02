@@ -37,6 +37,8 @@ init_database <- function() {
       deadline TEXT,
       budget REAL,
       status TEXT,
+      payment_status TEXT,
+      amount_paid REAL,
       description TEXT
     )
   "
@@ -56,6 +58,18 @@ load_from_sqlite <- function() {
         start_date = as.Date(start_date),
         deadline = as.Date(deadline)
       )
+
+    # Add payment_status column if it doesn't exist (for backwards compatibility)
+    if (!"payment_status" %in% names(projects)) {
+      projects <- projects %>%
+        mutate(payment_status = "Unpaid")
+    }
+
+    # Add amount_paid column if it doesn't exist (for backwards compatibility)
+    if (!"amount_paid" %in% names(projects)) {
+      projects <- projects %>%
+        mutate(amount_paid = 0)
+    }
   } else {
     projects <- data.frame()
   }
@@ -121,6 +135,18 @@ load_from_google_sheets <- function() {
           id = as.integer(id),
           budget = as.numeric(budget)
         )
+
+      # Add payment_status column if it doesn't exist (for backwards compatibility)
+      if (!"payment_status" %in% names(projects)) {
+        projects <- projects %>%
+          mutate(payment_status = "Unpaid")
+      }
+
+      # Add amount_paid column if it doesn't exist (for backwards compatibility)
+      if (!"amount_paid" %in% names(projects)) {
+        projects <- projects %>%
+          mutate(amount_paid = 0)
+      }
 
       return(projects)
     },
@@ -221,6 +247,7 @@ load_sample_data <- function() {
 
   project_types <- c("Commission", "Personal", "Client Work", "Portfolio")
   statuses <- c("Active", "Completed", "On Hold")
+  payment_statuses <- c("Paid", "Partially Paid", "Unpaid")
 
   # Generate sample projects spanning the last 12 months
   start_dates <- sample(
@@ -267,6 +294,8 @@ load_sample_data <- function() {
       replace = TRUE
     ),
     status = sample(statuses, 25, replace = TRUE, prob = c(0.4, 0.5, 0.1)),
+    payment_status = sample(payment_statuses, 25, replace = TRUE, prob = c(0.5, 0.2, 0.3)),
+    amount_paid = 0,
     description = c(
       "Detailed fantasy character portrait with magical elements",
       "Modern logo design for local coffee shop",

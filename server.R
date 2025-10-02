@@ -201,11 +201,11 @@ server <- function(input, output, session) {
     valueBox(
       value = format_currency(total),
       subtitle = tags$span(
-        "Total Revenue ",
+        "Received Revenue ",
         tags$i(
           class = "fa fa-info-circle",
           style = "cursor: pointer;",
-          title = "Sum of all project budgets within the selected date range"
+          title = "Total revenue from projects marked as 'Paid' within the selected date range"
         )
       ),
       icon = icon("dollar-sign"),
@@ -278,7 +278,9 @@ server <- function(input, output, session) {
       start_date = input$start_date,
       deadline = input$deadline,
       budget = input$budget,
+      amount_paid = input$amount_paid,
       status = input$status,
+      payment_status = input$payment_status,
       description = input$description,
       stringsAsFactors = FALSE
     )
@@ -368,7 +370,7 @@ server <- function(input, output, session) {
     col_name <- names(displayed_data)[info$col]
     new_value <- info$value
 
-    # Validate project_type and status columns
+    # Validate project_type, status, and payment_status columns
     if (col_name == "project_type") {
       if (!new_value %in% PROJECT_TYPES) {
         showNotification(
@@ -387,6 +389,15 @@ server <- function(input, output, session) {
         )
         return()
       }
+    } else if (col_name == "payment_status") {
+      if (!new_value %in% PAYMENT_STATUSES) {
+        showNotification(
+          paste0("Invalid payment status! Must be one of: ", paste(PAYMENT_STATUSES, collapse = ", ")),
+          type = "error",
+          duration = 5
+        )
+        return()
+      }
     }
 
     # Update data with proper type conversion
@@ -395,7 +406,7 @@ server <- function(input, output, session) {
       new_value <- as.integer(new_value)
     } else if (col_name == "start_date" || col_name == "deadline") {
       new_value <- as.Date(new_value)
-    } else if (col_name == "budget") {
+    } else if (col_name == "budget" || col_name == "amount_paid") {
       new_value <- as.numeric(new_value)
     }
 

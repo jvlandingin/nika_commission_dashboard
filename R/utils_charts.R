@@ -53,7 +53,7 @@ create_active_commissions_chart <- function(data, date_range) {
   ggplotly(p)
 }
 
-#' Create monthly revenue chart
+#' Create monthly revenue chart showing actual payments received
 #' @param data Projects dataframe
 #' @param date_range Vector of two dates (start, end)
 #' @return Plotly chart object
@@ -62,12 +62,12 @@ create_monthly_revenue_chart <- function(data, date_range) {
     filter(start_date >= date_range[1] & start_date <= date_range[2]) %>%
     mutate(month = floor_date(start_date, "month")) %>%
     group_by(month) %>%
-    summarise(revenue = sum(budget, na.rm = TRUE), .groups = "drop") %>%
+    summarise(revenue = sum(amount_paid, na.rm = TRUE), .groups = "drop") %>%
     arrange(month)
 
   p <- ggplot(monthly_revenue, aes(x = month, y = revenue)) +
     geom_col(fill = "#2ecc71") +
-    labs(x = "Month", y = "Revenue (₱)", title = "") +
+    labs(x = "Month", y = "Revenue Received (₱)", title = "") +
     scale_y_continuous(labels = scales::comma) +
     theme_minimal()
 

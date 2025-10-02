@@ -116,10 +116,17 @@ ui <- dashboardPage(
             dateInput("start_date", "Start Date:", value = Sys.Date()),
             dateInput("deadline", "Deadline:", value = Sys.Date() + 30),
             numericInput("budget", "Budget (₱):", value = 0, min = 0),
+            numericInput("amount_paid", "Amount Paid (₱):", value = 0, min = 0),
             selectInput(
               "status",
               "Status:",
               choices = PROJECT_STATUSES
+            ),
+            selectInput(
+              "payment_status",
+              "Payment Status:",
+              choices = PAYMENT_STATUSES,
+              selected = "Unpaid"
             ),
             textAreaInput("description", "Description:", value = "", rows = 3),
             br(),
@@ -176,7 +183,9 @@ ui <- dashboardPage(
                 tags$strong("Project Type:"),
                 " Commission, Personal, Client Work, Portfolio | ",
                 tags$strong("Status:"),
-                " Active, Completed, On Hold, Cancelled"
+                " Active, Completed, On Hold, Cancelled | ",
+                tags$strong("Payment:"),
+                " Paid, Partially Paid, Unpaid"
               )
             ),
             DT::dataTableOutput("all_projects")

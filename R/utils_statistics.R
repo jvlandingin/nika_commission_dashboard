@@ -39,12 +39,12 @@ calc_oldest_project <- function(data) {
   return(oldest)
 }
 
-#' Calculate total revenue from all projects
+#' Calculate total received revenue (actual amount paid)
 #' @param data Projects dataframe
-#' @return Numeric total budget sum
+#' @return Numeric total received revenue
 calc_total_revenue <- function(data) {
   data %>%
-    summarise(total = sum(budget, na.rm = TRUE)) %>%
+    summarise(total = sum(amount_paid, na.rm = TRUE)) %>%
     pull(total)
 }
 
