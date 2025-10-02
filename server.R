@@ -5,6 +5,9 @@ server <- function(input, output, session) {
   # Reactive data - Load from database
   projects_data <- reactiveVal(load_projects_data())
 
+  # Store selected rows for deletion
+  rows_to_delete <- reactiveVal(NULL)
+
   # Refresh data from Google Sheets (Manage Projects tab)
   observeEvent(input$refresh_data, {
     showNotification(
@@ -67,7 +70,7 @@ server <- function(input, output, session) {
     }
   })
 
-  # Delete selected rows
+  # Show confirmation modal when delete button is clicked
   observeEvent(input$delete_selected, {
     # Get selected rows from the table
     selected_rows <- input$all_projects_rows_selected
@@ -81,27 +84,53 @@ server <- function(input, output, session) {
       return()
     }
 
-    # Get the full data and displayed data
-    data <- projects_data()
-    displayed_data <- data %>% arrange(desc(start_date))
+    # Store selected rows
+    rows_to_delete(selected_rows)
 
-    # Get IDs of selected rows
-    selected_ids <- displayed_data$id[selected_rows]
+    # Show modal
+    showModal(modalDialog(
+      title = "Confirm Delete",
+      paste("Are you sure you want to delete", length(selected_rows), "project(s)?"),
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("confirm_delete", "Delete", class = "btn-danger")
+      )
+    ))
+  })
 
-    # Remove selected rows
-    updated_data <- data %>% filter(!id %in% selected_ids)
+  # Perform deletion when confirmed
+  observeEvent(input$confirm_delete, {
+    selected_rows <- rows_to_delete()
 
-    # Update reactive data
-    projects_data(updated_data)
+    if (!is.null(selected_rows)) {
+      # Get the full data and displayed data
+      data <- projects_data()
+      displayed_data <- data %>% arrange(desc(start_date))
 
-    # Save to database
-    save_projects_data(updated_data)
+      # Get IDs of selected rows
+      selected_ids <- displayed_data$id[selected_rows]
 
-    showNotification(
-      paste("Deleted", length(selected_ids), "project(s) successfully!"),
-      type = "message",
-      duration = 3
-    )
+      # Remove selected rows
+      updated_data <- data %>% filter(!id %in% selected_ids)
+
+      # Update reactive data
+      projects_data(updated_data)
+
+      # Save to database
+      save_projects_data(updated_data)
+
+      showNotification(
+        paste("Deleted", length(selected_ids), "project(s) successfully!"),
+        type = "message",
+        duration = 3
+      )
+
+      # Clear stored rows
+      rows_to_delete(NULL)
+
+      # Close modal
+      removeModal()
+    }
   })
 
   # Filtered data based on date range
