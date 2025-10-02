@@ -1,0 +1,318 @@
+/* Cute & Artsy Dashboard Theme */
+
+/* Import a playful font */
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;600;700&family=Quicksand:wght@400;500;600;700&display=swap');
+
+/* Global font changes */
+body, .content-wrapper, .main-sidebar, .sidebar, .navbar {
+  font-family: 'Quicksand', sans-serif !important;
+}
+
+h1, h2, h3, h4, h5, h6, .box-title {
+  font-family: 'Comfortaa', cursive !important;
+  font-weight: 600 !important;
+}
+
+/* Main header - pastel gradient */
+.main-header .navbar {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%) !important;
+  border: none !important;
+  box-shadow: 0 2px 10px rgba(252, 182, 159, 0.3) !important;
+}
+
+.main-header .logo {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%) !important;
+  font-family: 'Comfortaa', cursive !important;
+  font-weight: 700 !important;
+  border: none !important;
+  box-shadow: 0 2px 10px rgba(255, 154, 158, 0.3) !important;
+}
+
+.main-header .logo:hover {
+  background: linear-gradient(135deg, #fecfef 0%, #ff9a9e 100%) !important;
+}
+
+/* Sidebar - soft pastel */
+.main-sidebar {
+  background: linear-gradient(180deg, #ffeaa7 0%, #fdcb6e 100%) !important;
+  box-shadow: 2px 0 10px rgba(253, 203, 110, 0.2) !important;
+}
+
+.sidebar-menu > li > a {
+  color: #2d3436 !important;
+  font-weight: 500 !important;
+  border-left: 3px solid transparent !important;
+  transition: all 0.3s ease !important;
+}
+
+.sidebar-menu > li:hover > a,
+.sidebar-menu > li.active > a {
+  background: rgba(255, 255, 255, 0.4) !important;
+  border-left: 3px solid #fd79a8 !important;
+  color: #2d3436 !important;
+  border-radius: 0 20px 20px 0 !important;
+  margin-left: 5px !important;
+}
+
+.sidebar-menu > li > a > .fa {
+  color: #fd79a8 !important;
+}
+
+/* Content area - soft background */
+.content-wrapper {
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe5ec 50%, #fff5f5 100%) !important;
+}
+
+/* Value boxes - cute pastels with rounded corners */
+.small-box {
+  border-radius: 20px !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+  border: 2px solid rgba(255, 255, 255, 0.8) !important;
+}
+
+.small-box:hover {
+  transform: translateY(-5px) !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Custom pastel colors for value boxes */
+.small-box.bg-aqua,
+.small-box.bg-blue {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%) !important;
+}
+
+.small-box.bg-yellow {
+  background: linear-gradient(135deg, #fff9b0 0%, #ffeaa7 100%) !important;
+}
+
+.small-box.bg-red {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%) !important;
+}
+
+.small-box.bg-green {
+  background: linear-gradient(135deg, #c1fba4 0%, #a8edea 100%) !important;
+}
+
+.small-box.bg-purple {
+  background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%) !important;
+}
+
+.small-box.bg-orange {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%) !important;
+}
+
+.small-box h3, .small-box p {
+  color: #2d3436 !important;
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8) !important;
+}
+
+.small-box .icon {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Boxes - rounded and cute */
+.box {
+  border-radius: 20px !important;
+  border-top: 3px solid #fd79a8 !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important;
+  transition: box-shadow 0.3s ease !important;
+}
+
+.box:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12) !important;
+}
+
+.box-header {
+  border-radius: 20px 20px 0 0 !important;
+}
+
+.box.box-solid.box-primary > .box-header {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%) !important;
+  color: #2d3436 !important;
+}
+
+.box.box-solid.box-success > .box-header {
+  background: linear-gradient(135deg, #c1fba4 0%, #a8edea 100%) !important;
+  color: #2d3436 !important;
+}
+
+.box.box-solid.box-warning > .box-header {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%) !important;
+  color: #2d3436 !important;
+}
+
+.box.box-solid.box-info > .box-header {
+  background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%) !important;
+  color: #2d3436 !important;
+}
+
+/* Buttons - rounded and playful */
+.btn {
+  border-radius: 25px !important;
+  font-weight: 500 !important;
+  transition: all 0.3s ease !important;
+  border: 2px solid transparent !important;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%) !important;
+  color: #2d3436 !important;
+  border-color: transparent !important;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #fed6e3 0%, #a8edea 100%) !important;
+  transform: scale(1.05) !important;
+  box-shadow: 0 4px 15px rgba(168, 237, 234, 0.4) !important;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #c1fba4 0%, #a8edea 100%) !important;
+  color: #2d3436 !important;
+  border-color: transparent !important;
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #a8edea 0%, #c1fba4 100%) !important;
+  transform: scale(1.05) !important;
+  box-shadow: 0 4px 15px rgba(193, 251, 164, 0.4) !important;
+}
+
+.btn-info {
+  background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%) !important;
+  color: #2d3436 !important;
+  border-color: transparent !important;
+}
+
+.btn-info:hover {
+  background: linear-gradient(135deg, #8ec5fc 0%, #e0c3fc 100%) !important;
+  transform: scale(1.05) !important;
+  box-shadow: 0 4px 15px rgba(224, 195, 252, 0.4) !important;
+}
+
+/* Input fields - rounded */
+.form-control {
+  border-radius: 15px !important;
+  border: 2px solid #dfe6e9 !important;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+.form-control:focus {
+  border-color: #fd79a8 !important;
+  box-shadow: 0 0 0 0.2rem rgba(253, 121, 168, 0.25) !important;
+}
+
+/* Date inputs */
+.shiny-date-input .form-control,
+.shiny-date-range-input .form-control {
+  border-radius: 15px !important;
+}
+
+/* DataTables - softer look */
+.dataTables_wrapper {
+  font-family: 'Quicksand', sans-serif !important;
+}
+
+.dataTable thead th {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%) !important;
+  color: #2d3436 !important;
+  border: none !important;
+  font-weight: 600 !important;
+}
+
+.dataTable tbody tr:hover {
+  background-color: rgba(253, 121, 168, 0.1) !important;
+}
+
+.dataTable tbody td {
+  border-color: #ffe5ec !important;
+}
+
+/* Pagination buttons */
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+  border-radius: 10px !important;
+  margin: 0 3px !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+  background: linear-gradient(135deg, #fd79a8 0%, #fecfef 100%) !important;
+  color: white !important;
+  border-color: transparent !important;
+}
+
+/* Filter inputs in DataTables */
+.dataTables_wrapper input[type="search"],
+.dataTables_wrapper select {
+  border-radius: 15px !important;
+  border: 2px solid #dfe6e9 !important;
+}
+
+/* Notifications */
+.shiny-notification {
+  border-radius: 15px !important;
+  border-left: 5px solid #fd79a8 !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+  font-family: 'Quicksand', sans-serif !important;
+}
+
+.shiny-notification-error {
+  border-left-color: #ff7675 !important;
+  background-color: #ffe5e5 !important;
+}
+
+/* Plotly charts - add some padding */
+.plotly {
+  border-radius: 15px !important;
+}
+
+/* Add cute decorative elements */
+.content-header > h1:before {
+  content: "✨ ";
+  color: #fd79a8;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fff5f5;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #fd79a8 0%, #fecfef 100%);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #fecfef 0%, #fd79a8 100%);
+}
+
+/* Tab content */
+.nav-tabs-custom {
+  border-radius: 20px !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Info icons */
+.fa-info-circle {
+  color: #fd79a8 !important;
+  transition: transform 0.3s ease !important;
+}
+
+.fa-info-circle:hover {
+  transform: scale(1.2) !important;
+}
+
+/* Add subtle animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.small-box .icon {
+  animation: float 3s ease-in-out infinite !important;
+}
