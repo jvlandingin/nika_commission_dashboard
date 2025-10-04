@@ -36,10 +36,29 @@ init_database <- function() {
       start_date TEXT,
       deadline TEXT,
       budget REAL,
+      currency TEXT,
       status TEXT,
       payment_status TEXT,
       amount_paid REAL,
       description TEXT
+    )
+  "
+  )
+
+  # Create payments table if it doesn't exist
+  dbExecute(
+    con,
+    "
+    CREATE TABLE IF NOT EXISTS payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id INTEGER NOT NULL,
+      payment_date TEXT NOT NULL,
+      amount REAL NOT NULL,
+      currency TEXT NOT NULL,
+      exchange_rate REAL,
+      payment_method TEXT,
+      notes TEXT,
+      FOREIGN KEY (project_id) REFERENCES projects(id)
     )
   "
   )
@@ -69,6 +88,12 @@ load_from_sqlite <- function() {
     if (!"amount_paid" %in% names(projects)) {
       projects <- projects %>%
         mutate(amount_paid = 0)
+    }
+
+    # Add currency column if it doesn't exist (for backwards compatibility)
+    if (!"currency" %in% names(projects)) {
+      projects <- projects %>%
+        mutate(currency = "USD")  # Default to USD
     }
   } else {
     projects <- data.frame()
@@ -146,6 +171,12 @@ load_from_google_sheets <- function() {
       if (!"amount_paid" %in% names(projects)) {
         projects <- projects %>%
           mutate(amount_paid = 0)
+      }
+
+      # Add currency column if it doesn't exist (for backwards compatibility)
+      if (!"currency" %in% names(projects)) {
+        projects <- projects %>%
+          mutate(currency = "USD")  # Default to USD
       }
 
       return(projects)
@@ -295,6 +326,7 @@ load_sample_data <- function() {
     ),
     status = sample(statuses, 25, replace = TRUE, prob = c(0.4, 0.5, 0.1)),
     payment_status = sample(payment_statuses, 25, replace = TRUE, prob = c(0.5, 0.2, 0.3)),
+    currency = sample(c("USD", "PHP"), 25, replace = TRUE, prob = c(0.7, 0.3)),
     amount_paid = 0,
     description = c(
       "Detailed fantasy character portrait with magical elements",

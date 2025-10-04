@@ -1,1 +1,2 @@
+renv::restore()
 shiny::runApp()

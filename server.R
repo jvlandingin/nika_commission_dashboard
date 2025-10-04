@@ -4,6 +4,7 @@
 server <- function(input, output, session) {
   # Reactive data - Load from database
   projects_data <- reactiveVal(load_projects_data())
+  payments_data <- reactiveVal(load_payments_data())
 
   # Store selected rows for deletion
   rows_to_delete <- reactiveVal(NULL)
@@ -140,6 +141,19 @@ server <- function(input, output, session) {
       filter(start_date >= input$date_range[1] & start_date <= input$date_range[2])
   })
 
+  # Dashboard - Convert filtered data to display currency
+  # Uses latest exchange rate from payments or fetches from API
+  display_data <- reactive({
+    req(input$display_currency)
+    data <- filtered_data()
+
+    # Get latest exchange rate
+    exchange_rate <- get_latest_exchange_rate(payments_data())
+
+    # Convert to display currency
+    convert_projects_to_display_currency(data, input$display_currency, exchange_rate)
+  })
+
   # Dashboard statistics value boxes (filtered by date range)
   output$active_projects <- renderValueBox({
     active_count <- calc_active_projects(filtered_data())
@@ -196,16 +210,20 @@ server <- function(input, output, session) {
   })
 
   output$total_revenue <- renderValueBox({
-    total <- calc_total_revenue(filtered_data())
+    # Use display_data which has amounts converted to display currency
+    total <- calc_total_revenue(display_data())
+
+    # Format with appropriate currency symbol based on display currency
+    formatted_total <- format_currency_display(total, input$display_currency)
 
     valueBox(
-      value = format_currency(total),
+      value = formatted_total,
       subtitle = tags$span(
-        "Received Revenue ",
+        paste("Received Revenue (", input$display_currency, ")"),
         tags$i(
           class = "fa fa-info-circle",
           style = "cursor: pointer;",
-          title = "Total revenue from projects marked as 'Paid' within the selected date range"
+          title = "Total revenue from projects marked as 'Paid' within the selected date range, shown in selected display currency"
         )
       ),
       icon = icon("dollar-sign"),
@@ -278,9 +296,10 @@ server <- function(input, output, session) {
       start_date = input$start_date,
       deadline = input$deadline,
       budget = input$budget,
-      amount_paid = input$amount_paid,
+      currency = input$currency,
+      amount_paid = 0,  # Default to 0, will be updated when payments are added
       status = input$status,
-      payment_status = input$payment_status,
+      payment_status = "Unpaid",  # Default to Unpaid, will be auto-updated when payments are added
       description = input$description,
       stringsAsFactors = FALSE
     )
@@ -429,4 +448,299 @@ server <- function(input, output, session) {
       duration = 3
     )
   })
+
+  # Payment Records - Update project dropdown
+  # Dynamically update the project selector in the payment form
+  # Shows project name and currency (e.g., "Project A (USD)")
+  observe({
+    projects <- projects_data()
+    project_choices <- setNames(
+      projects$id,
+      paste0(projects$project_name, " (", projects$currency, ")")
+    )
+    updateSelectInput(session, "payment_project", choices = project_choices)
+  })
+
+  # Payment Records - Refresh from Google Sheets
+  # Syncs payment data from Google Sheets to local app
+  # Handles empty sheets (when all payments are deleted)
+  observeEvent(input$refresh_payments, {
+    showNotification(
+      "Refreshing payments from Google Sheets...",
+      type = "message",
+      duration = 2,
+      id = "refresh_payments_notification"
+    )
+
+    fresh_payments <- load_payments_from_google_sheets()
+
+    if (!is.null(fresh_payments)) {
+      # Update even if empty (means user deleted all payments in Google Sheets)
+      payments_data(fresh_payments)
+      save_payments_to_sqlite(fresh_payments)
+
+      showNotification(
+        paste("Payments refreshed successfully!", nrow(fresh_payments), "payment(s) loaded"),
+        type = "message",
+        duration = 3
+      )
+    } else {
+      showNotification(
+        "Failed to refresh payments from Google Sheets",
+        type = "error",
+        duration = 5
+      )
+    }
+  })
+
+  # Payment Records - Add new payment
+  # Records a payment for a project with automatic exchange rate fetching
+  # Also auto-updates the project's amount_paid and payment_status fields
+  observeEvent(input$add_payment, {
+    # Validate inputs
+    if (is.null(input$payment_project) || input$payment_amount <= 0) {
+      showNotification(
+        "Please select a project and enter a valid amount",
+        type = "warning",
+        duration = 3
+      )
+      return()
+    }
+
+    # Fetch current USD to PHP exchange rate from API
+    exchange_rate <- fetch_exchange_rate()
+
+    # Get current payments data
+    payments <- payments_data()
+
+    # Generate new payment ID (auto-increment)
+    new_id <- ifelse(nrow(payments) == 0, 1, max(payments$id, na.rm = TRUE) + 1)
+
+    # Create new payment record with all details
+    new_payment <- data.frame(
+      id = new_id,
+      project_id = as.integer(input$payment_project),
+      payment_date = input$payment_date,
+      amount = input$payment_amount,
+      currency = input$payment_currency,
+      exchange_rate = exchange_rate,  # Store rate for historical accuracy
+      payment_method = input$payment_method,
+      notes = input$payment_notes,
+      stringsAsFactors = FALSE
+    )
+
+    # Add new payment to existing payments
+    updated_payments <- rbind(payments, new_payment)
+    payments_data(updated_payments)
+
+    # Save to both Google Sheets and SQLite
+    save_payments_data(updated_payments)
+
+    # === Auto-update project's payment information ===
+    projects <- projects_data()
+    project_id <- as.integer(input$payment_project)
+
+    # Get project details for currency conversion
+    project_row <- projects[projects$id == project_id, ]
+    project_currency <- project_row$currency
+    project_budget <- project_row$budget
+
+    # Calculate total amount paid for this project
+    # Convert all payments to the project's currency for accurate totaling
+    total_paid <- updated_payments %>%
+      filter(project_id == !!project_id) %>%
+      mutate(
+        amount_in_project_currency = ifelse(
+          currency == project_currency,
+          amount,  # No conversion needed
+          ifelse(
+            project_currency == "USD",
+            amount / exchange_rate,  # Convert PHP to USD
+            amount * exchange_rate   # Convert USD to PHP
+          )
+        )
+      ) %>%
+      pull(amount_in_project_currency) %>%
+      sum()
+
+    # Update project's amount_paid field
+    projects$amount_paid[projects$id == project_id] <- total_paid
+
+    # Auto-update payment_status based on total paid vs budget
+    if (total_paid >= project_budget) {
+      projects$payment_status[projects$id == project_id] <- "Paid"
+    } else if (total_paid > 0) {
+      projects$payment_status[projects$id == project_id] <- "Partially Paid"
+    } else {
+      projects$payment_status[projects$id == project_id] <- "Unpaid"
+    }
+
+    # Save updated project data to both Google Sheets and SQLite
+    projects_data(projects)
+    save_projects_data(projects)
+
+    # Clear form
+    updateNumericInput(session, "payment_amount", value = 0)
+    updateTextAreaInput(session, "payment_notes", value = "")
+
+    showNotification(
+      paste0(
+        "Payment recorded successfully! Exchange rate: 1 USD = ",
+        round(exchange_rate, 2), " PHP. Project updated: ",
+        format_currency_display(total_paid, project_currency), " paid of ",
+        format_currency_display(project_budget, project_currency)
+      ),
+      type = "message",
+      duration = 5
+    )
+  })
+
+  # Payment Records - Delete selected payments (show confirmation modal)
+  # Shows a confirmation dialog before deleting selected payment records
+  observeEvent(input$delete_selected_payments, {
+    selected_rows <- input$payments_table_rows_selected
+
+    if (is.null(selected_rows) || length(selected_rows) == 0) {
+      showNotification(
+        "Please select rows to delete",
+        type = "warning",
+        duration = 3
+      )
+      return()
+    }
+
+    # Store selected rows
+    rows_to_delete(selected_rows)
+
+    # Show modal
+    showModal(modalDialog(
+      title = "Confirm Delete",
+      paste("Are you sure you want to delete", length(selected_rows), "payment(s)?"),
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("confirm_delete_payments", "Delete", class = "btn-danger")
+      )
+    ))
+  })
+
+  # Payment Records - Confirm and execute payment deletion
+  # Deletes selected payment records from both Google Sheets and SQLite
+  observeEvent(input$confirm_delete_payments, {
+    selected_rows <- rows_to_delete()
+
+    if (!is.null(selected_rows)) {
+      payments <- payments_data()
+
+      # Get displayed data (sorted by date descending)
+      displayed_data <- payments %>%
+        left_join(
+          projects_data() %>% select(id, project_name),
+          by = c("project_id" = "id")
+        ) %>%
+        arrange(desc(payment_date))
+
+      # Get actual payment IDs to delete (accounting for table sorting)
+      payment_ids_to_delete <- displayed_data$id[selected_rows]
+
+      # Remove selected payments from dataset
+      updated_payments <- payments %>% filter(!id %in% payment_ids_to_delete)
+
+      # Update reactive value
+      payments_data(updated_payments)
+
+      # Save to both Google Sheets and SQLite
+      save_payments_data(updated_payments)
+
+      showNotification(
+        paste("Deleted", length(payment_ids_to_delete), "payment(s) successfully!"),
+        type = "message",
+        duration = 3
+      )
+
+      # Clear stored rows
+      rows_to_delete(NULL)
+
+      # Close modal
+      removeModal()
+    }
+  })
+
+  # Payment Records - Payments table display
+  # Shows all payment records with currency conversions
+  # Displays both USD and PHP equivalents for each payment
+  output$payments_table <- DT::renderDataTable(
+    {
+      payments <- payments_data()
+      projects <- projects_data()
+
+      if (nrow(payments) == 0) {
+        return(data.frame(Message = "No payments recorded yet"))
+      }
+
+      # Join payments with projects to display project names
+      payments %>%
+        left_join(
+          projects %>% select(id, project_name),
+          by = c("project_id" = "id")
+        ) %>%
+        mutate(
+          # Format amount with currency symbol ($100.00 or ₱5,800.00)
+          amount_display = format_currency_display(amount, currency),
+          # Calculate USD equivalent (no conversion if already USD)
+          usd_equivalent = ifelse(
+            currency == "USD",
+            amount,
+            amount / exchange_rate
+          ),
+          # Calculate PHP equivalent (no conversion if already PHP)
+          php_equivalent = ifelse(
+            currency == "PHP",
+            amount,
+            amount * exchange_rate
+          )
+        ) %>%
+        select(
+          ID = id,
+          Project = project_name,
+          Date = payment_date,
+          Amount = amount_display,
+          `USD Equiv.` = usd_equivalent,
+          `PHP Equiv.` = php_equivalent,
+          `Exch. Rate` = exchange_rate,
+          Method = payment_method,
+          Notes = notes
+        ) %>%
+        arrange(desc(Date))  # Sort by most recent first
+    },
+    filter = 'top',  # Column filters
+    selection = 'multiple',  # Allow row selection for deletion
+    extensions = 'Buttons',
+    options = list(
+      pageLength = 10,
+      scrollX = TRUE,
+      dom = 'Bfrtip',
+      buttons = list(
+        list(extend = 'copy', text = 'Copy to Clipboard'),
+        'csv',
+        'excel'
+      ),
+      order = list(list(2, 'desc')),  # Sort by date column (index 2, descending)
+      columnDefs = list(
+        list(
+          # Apply JavaScript number formatter to USD and PHP equivalent columns
+          targets = c(4, 5),  # Columns 4 and 5 (0-indexed)
+          render = JS(
+            "function(data, type, row, meta) {",
+            "  if (type === 'display') {",
+            "    var num = parseFloat(data);",
+            "    if (isNaN(num)) return data;",
+            "    return '$' + num.toFixed(2).replace(/\\d(?=(\\d{3})+\\.)/g, '$&,');",
+            "  }",
+            "  return data;",
+            "}"
+          )
+        )
+      )
+    )
+  )
 }

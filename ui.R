@@ -12,6 +12,11 @@ ui <- dashboardPage(
         "Manage Projects",
         tabName = "manage_projects",
         icon = icon("table")
+      ),
+      menuItem(
+        "Payment Records",
+        tabName = "payment_records",
+        icon = icon("money-bill-wave")
       )
     )
   ),
@@ -30,23 +35,48 @@ ui <- dashboardPage(
         tabName = "dashboard",
         fluidRow(
           box(
-            title = "Date Filter",
+            title = "Dashboard Filters",
             status = "primary",
             solidHeader = TRUE,
             width = 12,
-            dateRangeInput(
-              "date_range",
-              "Date Range:",
-              start = Sys.Date() - 365,
-              end = Sys.Date(),
-              max = Sys.Date()
-            ),
-            actionButton(
-              "refresh_dashboard",
-              label = "Refresh from Google Sheets",
-              icon = icon("sync"),
-              class = "btn btn-success btn-sm",
-              style = "margin-top: 10px;"
+            fluidRow(
+              column(
+                width = 6,
+                dateRangeInput(
+                  "date_range",
+                  "Date Range:",
+                  start = Sys.Date() - 365,
+                  end = Sys.Date(),
+                  max = Sys.Date()
+                )
+              ),
+              column(
+                width = 3,
+                tags$label("Display Currency:"),
+                tags$div(
+                  style = "margin-top: 5px;",
+                  radioButtons(
+                    "display_currency",
+                    label = NULL,
+                    choices = c("USD" = "USD", "PHP" = "PHP"),
+                    selected = "USD",
+                    inline = TRUE
+                  )
+                )
+              ),
+              column(
+                width = 3,
+                tags$label(HTML("&nbsp;")),  # Spacer for alignment
+                tags$div(
+                  style = "margin-top: 5px;",
+                  actionButton(
+                    "refresh_dashboard",
+                    label = "Refresh from Google Sheets",
+                    icon = icon("sync"),
+                    class = "btn btn-success btn-sm"
+                  )
+                )
+              )
             )
           )
         ),
@@ -115,18 +145,17 @@ ui <- dashboardPage(
             ),
             dateInput("start_date", "Start Date:", value = Sys.Date()),
             dateInput("deadline", "Deadline:", value = Sys.Date() + 30),
-            numericInput("budget", "Budget (₱):", value = 0, min = 0),
-            numericInput("amount_paid", "Amount Paid (₱):", value = 0, min = 0),
+            numericInput("budget", "Budget:", value = 0, min = 0),
+            selectInput(
+              "currency",
+              "Currency:",
+              choices = CURRENCIES,
+              selected = "USD"
+            ),
             selectInput(
               "status",
               "Status:",
               choices = PROJECT_STATUSES
-            ),
-            selectInput(
-              "payment_status",
-              "Payment Status:",
-              choices = PAYMENT_STATUSES,
-              selected = "Unpaid"
             ),
             textAreaInput("description", "Description:", value = "", rows = 3),
             br(),
@@ -189,6 +218,115 @@ ui <- dashboardPage(
               )
             ),
             DT::dataTableOutput("all_projects")
+          )
+        )
+      ),
+
+      # Payment Records tab
+      tabItem(
+        tabName = "payment_records",
+        fluidRow(
+          box(
+            title = "Record New Payment",
+            status = "success",
+            solidHeader = TRUE,
+            width = 12,
+            fluidRow(
+              column(
+                width = 3,
+                selectInput(
+                  "payment_project",
+                  "Project:",
+                  choices = NULL
+                )
+              ),
+              column(
+                width = 2,
+                numericInput(
+                  "payment_amount",
+                  "Amount:",
+                  value = 0,
+                  min = 0
+                )
+              ),
+              column(
+                width = 2,
+                selectInput(
+                  "payment_currency",
+                  "Currency:",
+                  choices = CURRENCIES,
+                  selected = "USD"
+                )
+              ),
+              column(
+                width = 2,
+                dateInput(
+                  "payment_date",
+                  "Payment Date:",
+                  value = Sys.Date()
+                )
+              ),
+              column(
+                width = 2,
+                selectInput(
+                  "payment_method",
+                  "Payment Method:",
+                  choices = PAYMENT_METHODS,
+                  selected = "PayPal"
+                )
+              ),
+              column(
+                width = 1,
+                br(),
+                actionButton(
+                  "add_payment",
+                  "Add",
+                  class = "btn-success",
+                  style = "margin-top: 5px;"
+                )
+              )
+            ),
+            fluidRow(
+              column(
+                width = 12,
+                textAreaInput(
+                  "payment_notes",
+                  "Notes (optional):",
+                  value = "",
+                  rows = 2
+                )
+              )
+            )
+          )
+        ),
+        fluidRow(
+          box(
+            title = "Payment History",
+            status = "primary",
+            solidHeader = TRUE,
+            width = 12,
+            tags$div(
+              style = "margin-bottom: 10px;",
+              actionButton(
+                "refresh_payments",
+                label = "Refresh",
+                icon = icon("sync"),
+                class = "btn btn-success btn-sm"
+              ),
+              actionButton(
+                "delete_selected_payments",
+                label = "Delete Selected",
+                icon = icon("trash"),
+                class = "btn btn-danger btn-sm",
+                style = "margin-left: 10px;"
+              ),
+              tags$span(
+                style = "margin-left: 15px; color: #666; font-size: 12px;",
+                tags$i(class = "fa fa-info-circle"),
+                " Select rows and click Delete, or use Refresh to sync with Google Sheets"
+              )
+            ),
+            DT::dataTableOutput("payments_table")
           )
         )
       )
