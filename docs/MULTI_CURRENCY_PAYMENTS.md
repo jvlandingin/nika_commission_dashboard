@@ -16,7 +16,7 @@ This document describes the multi-currency payment tracking system implemented i
 - Each payment records:
   - Amount and currency (USD or PHP)
   - Payment date
-  - Payment method (Cash, Bank Transfer, PayPal, Wise, Crypto, Other)
+  - Payment method (Cash, Bank Transfer, PayPal, Gcash, Crypto, Other)
   - Exchange rate at time of payment
   - Optional notes
 
@@ -494,7 +494,7 @@ get_latest_exchange_rate(payments_data())
 
 Edit `PAYMENT_METHODS` in `global.R`:
 ```r
-PAYMENT_METHODS <- c("Cash", "Bank Transfer", "PayPal", "Wise", "Crypto", "Other", "Your New Method")
+PAYMENT_METHODS <- c("Cash", "Bank Transfer", "PayPal", "Gcash", "Crypto", "Other", "Your New Method")
 ```
 
 ## References

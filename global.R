@@ -29,5 +29,12 @@ PROJECT_TYPES <- c("Commission", "Personal", "Client Work", "Portfolio")
 PROJECT_STATUSES <- c("Active", "Completed", "On Hold", "Cancelled")
 PAYMENT_STATUSES <- c("Paid", "Partially Paid", "Unpaid")
 CURRENCIES <- c("USD", "PHP")
-PAYMENT_METHODS <- c("Cash", "Bank Transfer", "PayPal", "Wise", "Crypto", "Other")
+PAYMENT_METHODS <- c(
+  "Cash",
+  "Bank Transfer",
+  "PayPal",
+  "Gcash",
+  "Crypto",
+  "Other"
+)
 DATA_FILE <- "data/projects_data.rds"
