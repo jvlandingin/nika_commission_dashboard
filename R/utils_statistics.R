@@ -48,6 +48,29 @@ calc_total_revenue <- function(data) {
     pull(total)
 }
 
+#' Calculate net revenue from payments (amount - fees)
+#' @param payments_data Payments dataframe with amount and fee columns
+#' @param display_currency Target currency for display ("USD" or "PHP")
+#' @param exchange_rate Exchange rate (1 USD = X PHP)
+#' @return Numeric total net revenue in display currency
+calc_net_revenue_from_payments <- function(payments_data, display_currency = "USD", exchange_rate = 58) {
+  if (nrow(payments_data) == 0) return(0)
+
+  payments_data %>%
+    mutate(
+      # Calculate net amount in original currency
+      net_amount = amount - fee,
+      # Convert to display currency
+      net_in_display_currency = case_when(
+        currency == display_currency ~ net_amount,
+        display_currency == "USD" ~ net_amount / exchange_rate,
+        display_currency == "PHP" ~ net_amount * exchange_rate
+      )
+    ) %>%
+    summarise(total = sum(net_in_display_currency, na.rm = TRUE)) %>%
+    pull(total)
+}
+
 #' Calculate project completion rate as percentage
 #' @param data Projects dataframe
 #' @return Numeric completion rate percentage

@@ -14,7 +14,9 @@ This document describes the multi-currency payment tracking system implemented i
 ### 2. Payment Records System
 - Separate payment tracking independent of projects
 - Each payment records:
-  - Amount and currency (USD or PHP)
+  - Gross amount and currency (USD or PHP) - what client paid
+  - Fee deducted (e.g., PayPal fee, Wise fee)
+  - Net amount received (calculated: amount - fee)
   - Payment date
   - Payment method (Cash, Bank Transfer, PayPal, Gcash, Crypto, Other)
   - Exchange rate at time of payment
@@ -30,7 +32,9 @@ This document describes the multi-currency payment tracking system implemented i
 - Displays all payments with:
   - Project name
   - Payment date
-  - Original amount with currency symbol
+  - Gross amount (what client paid)
+  - Fee (what was deducted)
+  - Net received (what you actually got)
   - USD equivalent
   - PHP equivalent
   - Exchange rate used
@@ -41,12 +45,13 @@ This document describes the multi-currency payment tracking system implemented i
 
 ### 5. Auto-Update Project Status
 - When a payment is recorded, the system automatically:
-  - Calculates total payments (with currency conversion if needed)
-  - Updates project's `amount_paid` field
+  - Calculates total payments using **gross amounts** (what client paid, ignoring fees)
+  - Updates project's `amount_paid` field with gross total
   - Updates `payment_status` to:
     - **"Paid"** if total paid ≥ budget
     - **"Partially Paid"** if total paid > 0 but < budget
     - **"Unpaid"** if total paid = 0
+- **Logic:** Payment status is based on client's obligation (gross amount), not your net received
 
 ### 6. Payment Management
 - **Add payments**: Record new payments via Payment Records tab
@@ -83,6 +88,7 @@ payments (
   amount REAL NOT NULL,
   currency TEXT NOT NULL,     -- "USD" or "PHP"
   exchange_rate REAL,         -- Stored for historical accuracy
+  fee REAL,                   -- Fee deducted (e.g., PayPal fee)
   payment_method TEXT,
   notes TEXT,
   FOREIGN KEY (project_id) REFERENCES projects(id)
@@ -180,6 +186,25 @@ converted <- convert_projects_to_display_currency(projects, "PHP", 57.99)
 
 **Important:** Uses `case_when()` to properly handle NA values in `amount_paid`.
 
+#### `calc_net_revenue_from_payments(payments_data, display_currency, exchange_rate)` ✨ NEW
+Calculates total net revenue from payments (amount - fee) in display currency.
+
+**Parameters:**
+- `payments_data`: Payments dataframe with amount and fee columns
+- `display_currency`: Target currency ("USD" or "PHP")
+- `exchange_rate`: Exchange rate (1 USD = X PHP)
+
+**Returns:** Numeric total net revenue
+
+**Example:**
+```r
+# Calculate net revenue in USD
+net <- calc_net_revenue_from_payments(payments_data(), "USD", 58)
+# Returns sum of all (amount - fee) converted to USD
+```
+
+**Used by:** Dashboard "Net Revenue Received" value box. This shows your actual income after payment processing fees.
+
 #### `get_latest_exchange_rate(payments_data)` ✨ NEW (Phase 2)
 Smart exchange rate selection: uses latest payment rate or fetches from API.
 
@@ -228,24 +253,35 @@ Saves payments to both Google Sheets and SQLite.
 
 1. Go to **Payment Records** tab
 2. Select project from dropdown (shows project name and currency)
-3. Enter payment amount
+3. Enter payment **amount** (what client paid)
 4. Select payment currency (USD or PHP)
-5. Select payment date (defaults to today)
-6. Choose payment method
-7. Add optional notes
-8. Click **Add**
+5. Enter **fee** (e.g., PayPal takes $3.50) - defaults to 0
+6. Select payment date (defaults to today)
+7. Choose payment method
+8. Add optional notes
+9. Click **Add Payment**
 
 **What happens:**
 - Exchange rate is fetched automatically from API
 - Payment is saved to Google Sheets and SQLite
-- Project's `amount_paid` is updated (with currency conversion if needed)
-- Project's `payment_status` is auto-updated
+- Project's `amount_paid` is updated using **gross amount** (what client paid)
+- Project's `payment_status` is auto-updated based on gross amount
+- Dashboard revenue shows **net amount** (what you received after fees)
+
+**Example:**
+- Client pays: $100.00
+- PayPal fee: $3.50
+- You receive: $96.50
+- Project status: Based on $100 (client fulfilled their obligation)
+- Dashboard revenue: Shows $96.50 (your actual income)
 
 ### Viewing Payment History
 
 The **Payment History** table shows:
 - All payments sorted by date (newest first)
-- Original amount with currency symbol
+- Gross amount with currency symbol (what client paid)
+- Fee with currency symbol (what was deducted)
+- Net received with currency symbol (what you got)
 - USD equivalent (for comparison)
 - PHP equivalent (for comparison)
 - Exchange rate used for the payment
@@ -255,6 +291,7 @@ The **Payment History** table shows:
 - Sort by clicking column headers
 - Export to CSV/Excel
 - Copy to clipboard
+- Select rows and delete with confirmation
 
 ### Deleting Payments
 
@@ -279,22 +316,25 @@ If you manually edit payments in Google Sheets:
 
 ### When Recording a Payment
 
-The system calculates totals in the **project's base currency**:
+The system calculates totals using **gross amounts** (what client paid) in the **project's base currency**:
 
 **Example 1: USD project, USD payment**
 - Project budget: $1,000 USD
-- Payment: $500 USD
-- Total paid: $500 USD (no conversion)
+- Payment: $500 USD (fee: $3.50)
+- Total paid for status: $500 USD (no conversion, fee ignored)
+- Your net revenue: $496.50 USD
 
 **Example 2: USD project, PHP payment**
 - Project budget: $1,000 USD
-- Payment: ₱2,900 PHP (rate: 58)
-- Total paid: $550 USD ($500 existing + ₱2,900/58 = $50)
+- Payment: ₱2,900 PHP (rate: 58, fee: ₱100)
+- Total paid for status: $550 USD ($500 existing + ₱2,900/58 = $50)
+- Your net revenue: $548.28 USD ($500 existing + (₱2,900 - ₱100)/58)
 
 **Example 3: PHP project, USD payment**
 - Project budget: ₱58,000 PHP
-- Payment: $100 USD (rate: 58)
-- Total paid: ₱35,800 PHP (₱29,000 existing + $100*58 = ₱5,800)
+- Payment: $100 USD (rate: 58, fee: $2)
+- Total paid for status: ₱35,800 PHP (₱29,000 existing + $100*58 = ₱5,800)
+- Your net revenue: ₱34,684 PHP (₱29,000 existing + ($100 - $2)*58)
 
 ### Payment Status Updates
 
@@ -319,9 +359,10 @@ Create a sheet named **"Payments"** with these columns (case-sensitive):
 | `id` | Integer | Payment ID (auto-increments) |
 | `project_id` | Integer | Project ID (from Data sheet) |
 | `payment_date` | Date | Date payment received |
-| `amount` | Number | Payment amount |
+| `amount` | Number | Gross payment amount (what client paid) |
 | `currency` | Text | "USD" or "PHP" |
 | `exchange_rate` | Number | USD to PHP rate (e.g., 57.99) |
+| `fee` | Number | Fee deducted (e.g., 3.50 for PayPal fee) |
 | `payment_method` | Text | Payment method |
 | `notes` | Text | Optional notes |
 
@@ -369,9 +410,14 @@ The dashboard now includes a currency display toggle that allows you to view all
 - Preserves original project currencies (no data modification)
 
 **What gets converted:**
-- Total Revenue value box
+- Net Revenue Received value box (shows total after fees)
 - Project budgets in tables
 - Project amount_paid in tables
+
+**Fee Handling:**
+- Dashboard revenue shows **net amount** (what you received after fees)
+- Project payment status uses **gross amount** (what client paid, ignoring fees)
+- This ensures clients are marked "Paid" when they fulfill their obligation, while you see your actual income
 
 **Technical Implementation:**
 - New reactive: `display_data()` - converts filtered projects to display currency

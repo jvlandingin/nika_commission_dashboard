@@ -67,6 +67,7 @@ load_payments_from_google_sheets <- function() {
           amount = numeric(),
           currency = character(),
           exchange_rate = numeric(),
+          fee = numeric(),
           payment_method = character(),
           notes = character(),
           stringsAsFactors = FALSE
@@ -81,6 +82,7 @@ load_payments_from_google_sheets <- function() {
           project_id = as.integer(unlist(project_id)),
           amount = as.numeric(unlist(amount)),
           exchange_rate = as.numeric(unlist(exchange_rate)),
+          fee = as.numeric(unlist(fee)),
           currency = as.character(unlist(currency)),
           payment_method = as.character(unlist(payment_method)),
           notes = as.character(unlist(notes))
@@ -159,6 +161,7 @@ load_payments_data <- function() {
     amount = numeric(),
     currency = character(),
     exchange_rate = numeric(),
+    fee = numeric(),
     payment_method = character(),
     notes = character(),
     stringsAsFactors = FALSE

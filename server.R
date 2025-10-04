@@ -210,8 +210,14 @@ server <- function(input, output, session) {
   })
 
   output$total_revenue <- renderValueBox({
-    # Use display_data which has amounts converted to display currency
-    total <- calc_total_revenue(display_data())
+    # Calculate net revenue from payments (amount - fee) in display currency
+    # Uses latest exchange rate for accurate conversion
+    exchange_rate <- get_latest_exchange_rate(payments_data())
+    total <- calc_net_revenue_from_payments(
+      payments_data(),
+      input$display_currency,
+      exchange_rate
+    )
 
     # Format with appropriate currency symbol based on display currency
     formatted_total <- format_currency_display(total, input$display_currency)
@@ -219,11 +225,11 @@ server <- function(input, output, session) {
     valueBox(
       value = formatted_total,
       subtitle = tags$span(
-        paste("Received Revenue (", input$display_currency, ")"),
+        paste("Net Revenue Received (", input$display_currency, ")"),
         tags$i(
           class = "fa fa-info-circle",
           style = "cursor: pointer;",
-          title = "Total revenue from projects marked as 'Paid' within the selected date range, shown in selected display currency"
+          title = "Total net revenue received (payments minus fees), shown in selected display currency. This is what you actually received after payment processing fees."
         )
       ),
       icon = icon("dollar-sign"),
@@ -524,6 +530,7 @@ server <- function(input, output, session) {
       amount = input$payment_amount,
       currency = input$payment_currency,
       exchange_rate = exchange_rate,  # Store rate for historical accuracy
+      fee = input$payment_fee,  # Fee deducted (e.g., PayPal fee)
       payment_method = input$payment_method,
       notes = input$payment_notes,
       stringsAsFactors = FALSE
@@ -581,6 +588,7 @@ server <- function(input, output, session) {
 
     # Clear form
     updateNumericInput(session, "payment_amount", value = 0)
+    updateNumericInput(session, "payment_fee", value = 0)
     updateTextAreaInput(session, "payment_notes", value = "")
 
     showNotification(
@@ -684,8 +692,14 @@ server <- function(input, output, session) {
           by = c("project_id" = "id")
         ) %>%
         mutate(
-          # Format amount with currency symbol ($100.00 or ₱5,800.00)
+          # Format gross amount with currency symbol ($100.00 or ₱5,800.00)
           amount_display = format_currency_display(amount, currency),
+          # Format fee with currency symbol
+          fee_display = format_currency_display(fee, currency),
+          # Calculate net amount (what you actually received)
+          net_amount = amount - fee,
+          # Format net amount with currency symbol
+          net_display = format_currency_display(net_amount, currency),
           # Calculate USD equivalent (no conversion if already USD)
           usd_equivalent = ifelse(
             currency == "USD",
@@ -704,6 +718,8 @@ server <- function(input, output, session) {
           Project = project_name,
           Date = payment_date,
           Amount = amount_display,
+          Fee = fee_display,
+          `Net Received` = net_display,
           `USD Equiv.` = usd_equivalent,
           `PHP Equiv.` = php_equivalent,
           `Exch. Rate` = exchange_rate,
@@ -728,7 +744,7 @@ server <- function(input, output, session) {
       columnDefs = list(
         list(
           # Apply JavaScript number formatter to USD and PHP equivalent columns
-          targets = c(4, 5),  # Columns 4 and 5 (0-indexed)
+          targets = c(6, 7),  # Columns 6 and 7 (USD Equiv., PHP Equiv.) - 0-indexed
           render = JS(
             "function(data, type, row, meta) {",
             "  if (type === 'display') {",

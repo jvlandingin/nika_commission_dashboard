@@ -27,7 +27,23 @@ ui <- dashboardPage(
       tags$title("Mga Komisyon ni Nika - Artist Dashboard"),
       tags$meta(name = "viewport", content = "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"),
       tags$link(rel = "icon", type = "image/png", href = "favicon.png"),
-      tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
+      tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
+      # Auto-close sidebar after clicking menu item
+      tags$script(HTML("
+        $(document).ready(function() {
+          // When a menu item is clicked, close the sidebar
+          $('.sidebar-menu .treeview-menu li a, .sidebar-menu > li > a').on('click', function(e) {
+            // Small delay to allow the tab to switch first
+            setTimeout(function() {
+              // Simulate clicking the toggle button to close sidebar
+              if ($('.main-sidebar').is(':visible') &&
+                  ($('body').hasClass('sidebar-open') || !$('body').hasClass('sidebar-collapse'))) {
+                $('.sidebar-toggle').trigger('click');
+              }
+            }, 100);
+          });
+        });
+      "))
     ),
     tabItems(
       # Dashboard tab
@@ -233,7 +249,7 @@ ui <- dashboardPage(
             width = 12,
             fluidRow(
               column(
-                width = 3,
+                width = 4,
                 selectInput(
                   "payment_project",
                   "Project:",
@@ -250,7 +266,7 @@ ui <- dashboardPage(
                 )
               ),
               column(
-                width = 2,
+                width = 1,
                 selectInput(
                   "payment_currency",
                   "Currency:",
@@ -259,10 +275,20 @@ ui <- dashboardPage(
                 )
               ),
               column(
+                width = 1,
+                numericInput(
+                  "payment_fee",
+                  "Fee:",
+                  value = 0,
+                  min = 0,
+                  step = 0.01
+                )
+              ),
+              column(
                 width = 2,
                 dateInput(
                   "payment_date",
-                  "Payment Date:",
+                  "Date:",
                   value = Sys.Date()
                 )
               ),
@@ -270,30 +296,30 @@ ui <- dashboardPage(
                 width = 2,
                 selectInput(
                   "payment_method",
-                  "Payment Method:",
+                  "Method:",
                   choices = PAYMENT_METHODS,
                   selected = "PayPal"
-                )
-              ),
-              column(
-                width = 1,
-                br(),
-                actionButton(
-                  "add_payment",
-                  "Add",
-                  class = "btn-success",
-                  style = "margin-top: 5px;"
                 )
               )
             ),
             fluidRow(
               column(
-                width = 12,
+                width = 10,
                 textAreaInput(
                   "payment_notes",
                   "Notes (optional):",
                   value = "",
                   rows = 2
+                )
+              ),
+              column(
+                width = 2,
+                br(),
+                actionButton(
+                  "add_payment",
+                  "Add Payment",
+                  class = "btn-success btn-block",
+                  style = "margin-top: 5px;"
                 )
               )
             )
